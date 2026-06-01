@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>대전해든학교 아침 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: #dde8ff; }
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(160deg, #dde8ff 0%, #f4f6fb 55%, #d9f0e5 100%);
+    padding: 18px 0 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .wrap {
+    width: 100%;
+    max-width: 1000px;
+    padding: 0 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  @media (max-width: 500px) {
+    .wrap { padding: 0 16px; }
+  }
+
+  /* ── 설정 모달 ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 20px;
+  }
+  .modal-box {
+    background: white; border-radius: 24px;
+    padding: 32px 28px; width: 100%; max-width: 420px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  }
+  .modal-title { font-size: 20px; font-weight: 900; color: #202124; margin-bottom: 6px; }
+  .modal-sub { font-size: 14px; color: #5F6368; margin-bottom: 22px; }
+  .modal-label { font-size: 13px; font-weight: 700; color: #5F6368; margin-bottom: 6px; letter-spacing: 0.5px; }
+  .modal-input {
+    width: 100%; border: 1.5px solid #E8EAED; border-radius: 12px;
+    padding: 12px 14px; font-size: 17px; font-family: 'Noto Sans KR', sans-serif;
+    outline: none; color: #202124; margin-bottom: 16px;
+    transition: border-color 0.15s;
+  }
+  .modal-input:focus { border-color: #1a73e8; }
+  .modal-hint { font-size: 12px; color: #9AA0A6; margin-top: -10px; margin-bottom: 16px; }
+  .modal-btn {
+    width: 100%; background: #1a73e8; color: white;
+    border: none; border-radius: 14px; padding: 14px;
+    font-size: 17px; font-weight: 700; cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+    transition: background 0.15s;
+  }
+  .modal-btn:active { background: #1557b0; }
+  .modal-emoji-row {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .emoji-btn {
+    font-size: 22px; background: #F8F9FA; border: 1.5px solid #E8EAED;
+    border-radius: 10px; padding: 5px 8px; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .emoji-btn.selected { border-color: #1a73e8; background: #E8F0FE; }
+
+  /* ── 헤더 ── */
+  .header {
+    text-align: center;
+    padding: 16px 20px 14px;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 2px 14px rgba(66,133,244,0.10);
+    border: 1.5px solid #E8EAED;
+    position: relative;
+  }
+  .school-name { font-size: 18px; color: #5F6368; font-weight: 500; letter-spacing: 1.5px; }
+  .class-name { font-size: 34px; color: #1a73e8; font-weight: 900; margin-top: 2px; letter-spacing: -0.5px; }
+  .settings-btn {
+    position: absolute; top: 14px; right: 16px;
+    background: #F8F9FA; border: 1.5px solid #E8EAED;
+    border-radius: 10px; padding: 8px 12px;
+    font-size: 22px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .settings-btn:active { background: #E8F0FE; }
+
+  /* ── 인사 배너 ── */
+  .greeting-badge {
+    text-align: center;
+    background: linear-gradient(90deg, #1a73e8 0%, #34A853 100%);
+    border-radius: 18px;
+    padding: 12px;
+    color: white;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    box-shadow: 0 3px 12px rgba(26,115,232,0.25);
+  }
+
+  /* ── 탭 ── */
+  .tab-bar {
+    display: flex; gap: 8px;
+    background: white;
+    border-radius: 18px;
+    padding: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    border: 1.5px solid #E8EAED;
+  }
+  .tab-btn {
+    flex: 1; padding: 14px 8px;
+    border: none; background: transparent;
+    border-radius: 12px; font-size: 20px; font-weight: 700;
+    color: #9AA0A6; cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+    transition: background 0.15s, color 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .tab-btn.active {
+    background: #E8F0FE; color: #1a73e8;
+  }
+  .tab-content { display: none; flex-direction: column; gap: 14px; }
+  .tab-content.active { display: flex; }
+
+  /* ── 메인 탭 카드들 ── */
+  .grid-top { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-items: stretch; }
+  .card {
+    background: white; border-radius: 22px; padding: 18px 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07); border: 1.5px solid #E8EAED;
+  }
+  .card-label { font-size: 16px; color: #5F6368; font-weight: 700; letter-spacing: 0.8px; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+  .date-text { font-size: 30px; font-weight: 900; color: #202124; line-height: 1.15; }
+  .day-text { font-size: 26px; color: #1a73e8; font-weight: 700; margin-top: 4px; }
+  .time-text { font-size: 62px; font-weight: 900; color: #202124; letter-spacing: -2px; line-height: 1; }
+  .time-sec { font-size: 30px; color: #9AA0A6; font-weight: 400; letter-spacing: 0; }
+
+  /* ── 날씨 ── */
+  .weather-dust-card {
+    background: white; border-radius: 22px; padding: 18px 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07); border: 1.5px solid #E8EAED;
+  }
+  .weather-row { display: flex; align-items: center; gap: 12px; }
+  .weather-icon { font-size: 54px; line-height: 1; flex-shrink: 0; }
+  .weather-temp { font-size: 44px; font-weight: 900; color: #202124; }
+  .weather-desc { font-size: 21px; color: #5F6368; font-weight: 500; margin-top: 1px; }
+  .weather-sub { font-size: 17px; color: #9AA0A6; margin-top: 3px; }
+  .dust-row { display: flex; gap: 8px; border-top: 1px solid #F1F3F4; padding-top: 12px; margin-top: 2px; }
+  .dust-box { flex: 1; text-align: center; padding: 12px 6px; border-radius: 14px; }
+  .dust-box-label { font-size: 14px; color: #5F6368; font-weight: 700; margin-bottom: 3px; letter-spacing: 0.3px; }
+  .dust-box-val { font-size: 28px; font-weight: 900; }
+  .dust-box-unit { font-size: 14px; color: #9AA0A6; margin-top: 1px; }
+  .dust-box-status { font-size: 17px; font-weight: 700; margin-top: 2px; }
+  .bg-good{background:#E8F5E9;} .bg-normal{background:#E3F2FD;} .bg-bad{background:#FFF3E0;} .bg-vbad{background:#FCE4EC;}
+  .c-good{color:#2E7D32;} .c-normal{color:#1565C0;} .c-bad{color:#E65100;} .c-vbad{color:#880E4F;}
+  .weather-src { font-size: 11px; color: #BDC1C6; text-align: right; margin-top: 6px; }
+
+  /* ── 급식 ── */
+  .meal-card { background: white; border-radius: 22px; padding: 18px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); border: 1.5px solid #E8EAED; }
+  .meal-list { list-style: none; margin-top: 6px; }
+  .meal-list li { font-size: 22px; color: #202124; padding: 8px 0; border-bottom: 1px solid #F1F3F4; font-weight: 500; }
+  .meal-list li:last-child { border-bottom: none; }
+  .meal-cal { font-size: 16px; color: #9AA0A6; margin-top: 8px; }
+  .meal-src { font-size: 13px; color: #BDC1C6; text-align: right; margin-top: 4px; }
+
+  /* ── 바로가기 ── */
+  .ext-links { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .ext-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: white; border: 1.5px solid #E8EAED; border-radius: 18px; padding: 16px 10px;
+    font-size: 21px; font-weight: 700; color: #202124; cursor: pointer; text-decoration: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06); transition: background 0.15s, transform 0.1s;
+  }
+  .ext-btn:active { background: #F0F4FF; transform: scale(0.97); }
+  .ext-btn .btn-icon { font-size: 28px; }
+
+  /* ── 일정 ── */
+  .schedule-card { background: white; border-radius: 22px; padding: 18px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); border: 1.5px solid #E8EAED; }
+  .schedule-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .schedule-title { font-size: 18px; color: #5F6368; font-weight: 700; display: flex; align-items: center; gap: 5px; letter-spacing: 0.5px; }
+  .schedule-items { display: flex; flex-direction: column; gap: 9px; }
+  .schedule-item { display: flex; align-items: center; gap: 12px; background: #F8F9FA; border-radius: 14px; padding: 15px 18px; border: 1.5px solid #E8EAED; transition: border-color 0.15s; }
+  .schedule-item:focus-within { border-color: #1a73e8; background: #F0F6FF; }
+  .schedule-num { font-size: 16px; font-weight: 900; color: white; background: #1a73e8; border-radius: 50%; width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .schedule-text { font-size: 22px; color: #202124; font-weight: 500; flex: 1; border: none; background: transparent; outline: none; font-family: 'Noto Sans KR', sans-serif; caret-color: #1a73e8; }
+  .schedule-text::placeholder { color: #C5C8CD; font-size: 20px; }
+  .del-btn { background: none; border: none; color: #C5C8CD; font-size: 24px; cursor: pointer; padding: 0 2px; border-radius: 6px; line-height: 1; transition: color 0.15s; }
+  .del-btn:active { color: #EA4335; }
+  .add-btn { background: #E8F0FE; color: #1a73e8; border: none; border-radius: 14px; font-size: 30px; cursor: pointer; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-weight: 700; transition: background 0.15s; font-family: 'Noto Sans KR', sans-serif; }
+  .add-btn:active { background: #d2e3fc; }
+  .empty-schedule { text-align: center; padding: 18px 0; font-size: 18px; color: #BDC1C6; font-weight: 500; }
+
+  /* ── 사진 탭 ── */
+  .photo-toolbar {
+    display: flex; gap: 10px; align-items: center;
+    flex-wrap: wrap;
+  }
+  .photo-upload-btn {
+    display: flex; align-items: center; gap: 8px;
+    background: #1a73e8; color: white; border: none;
+    border-radius: 14px; padding: 14px 22px;
+    font-size: 19px; font-weight: 700; cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .photo-upload-btn:active { background: #1557b0; }
+  #photo-file-input { display: none; }
+  .photo-label-input {
+    flex: 1; min-width: 140px;
+    border: 1.5px solid #E8EAED; border-radius: 12px;
+    padding: 13px 16px; font-size: 18px;
+    font-family: 'Noto Sans KR', sans-serif;
+    outline: none; color: #202124;
+    transition: border-color 0.15s;
+  }
+  .photo-label-input:focus { border-color: #1a73e8; }
+  .photo-clear-btn {
+    background: #F8F9FA; border: 1.5px solid #E8EAED;
+    border-radius: 12px; padding: 13px 18px;
+    font-size: 17px; font-weight: 700; color: #EA4335;
+    cursor: pointer; font-family: 'Noto Sans KR', sans-serif;
+    transition: background 0.15s;
+  }
+  .photo-clear-btn:active { background: #FCE4EC; }
+  .photo-empty {
+    text-align: center; padding: 60px 20px;
+    background: white; border-radius: 22px;
+    border: 1.5px dashed #C5C8CD;
+    color: #9AA0A6; font-size: 19px;
+  }
+  .photo-empty-icon { font-size: 56px; margin-bottom: 12px; }
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+  }
+  .photo-item {
+    background: white; border-radius: 18px;
+    overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    border: 1.5px solid #E8EAED; position: relative;
+    cursor: pointer;
+  }
+  .photo-item img { width: 100%; height: 180px; object-fit: cover; display: block; }
+  .photo-item-label {
+    padding: 10px 12px; font-size: 17px; font-weight: 600; color: #202124;
+  }
+  .photo-item-date { font-size: 14px; color: #9AA0A6; padding: 0 12px 10px; }
+  .photo-del-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(0,0,0,0.55); color: white;
+    border: none; border-radius: 50%;
+    width: 28px; height: 28px; font-size: 14px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .photo-item:hover .photo-del-btn { opacity: 1; }
+  /* 사진 전체보기 모달 */
+  .photo-viewer-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.88);
+    display: none; align-items: center; justify-content: center;
+    z-index: 2000; padding: 20px;
+    flex-direction: column;
+  }
+  .photo-viewer-overlay.active { display: flex; }
+  .photo-viewer-img { max-width: 100%; max-height: 80vh; border-radius: 12px; object-fit: contain; }
+  .photo-viewer-label { color: white; font-size: 21px; font-weight: 700; margin-top: 14px; }
+  .photo-viewer-close {
+    position: fixed; top: 16px; right: 20px;
+    background: rgba(255,255,255,0.2); border: none; color: white;
+    border-radius: 50%; width: 40px; height: 40px; font-size: 20px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+
+  .loading { font-size: 14px; color: #9AA0A6; padding: 6px 0; }
+
+  /* ── 날씨+오늘시간표 2분할 ── */
+  .weather-timetable-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  }
+  /* 홈의 오늘 시간표 미니 카드 */
+  .today-tt-card {
+    background: white; border-radius: 22px; padding: 18px 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07); border: 1.5px solid #E8EAED;
+    display: flex; flex-direction: column;
+  }
+  .today-tt-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; flex: 1; }
+  .today-tt-item {
+    display: flex; align-items: center; gap: 10px;
+    background: #F8F9FA; border-radius: 12px; padding: 9px 14px;
+  }
+  .today-tt-item.current {
+    background: #E8F0FE; border: 1.5px solid #1a73e8;
+  }
+  .today-tt-period {
+    font-size: 15px; font-weight: 900; color: #1a73e8;
+    min-width: 28px; text-align: center;
+  }
+  .today-tt-subject { font-size: 19px; font-weight: 600; color: #202124; }
+  .today-tt-empty { font-size: 15px; color: #BDC1C6; text-align: center; padding: 20px 0; }
+
+  /* ── 시간표 탭 ── */
+  .tt-grid-wrap { overflow-x: auto; }
+  .tt-table {
+    width: 100%; border-collapse: separate; border-spacing: 6px;
+    min-width: 480px;
+  }
+  .tt-table th {
+    background: #1a73e8; color: white; font-size: 18px; font-weight: 700;
+    padding: 12px 8px; border-radius: 10px; text-align: center;
+  }
+  .tt-table th.today-col { background: #34A853; }
+  .tt-table td {
+    background: #F8F9FA; border-radius: 10px; padding: 6px 4px; text-align: center;
+    border: 1.5px solid #E8EAED;
+  }
+  .tt-table td.today-col { background: #E8F0FE; border-color: #a8c4f5; }
+  .tt-period-label {
+    font-size: 16px; font-weight: 900; color: #1a73e8;
+    background: #E8F0FE; border-radius: 10px; padding: 10px 6px;
+    text-align: center;
+  }
+  .tt-input {
+    width: 100%; border: none; background: transparent;
+    font-size: 19px; font-weight: 600; color: #202124;
+    text-align: center; outline: none; padding: 6px 2px;
+    font-family: 'Noto Sans KR', sans-serif;
+    caret-color: #1a73e8;
+  }
+  .tt-input::placeholder { color: #C5C8CD; font-size: 15px; }
+  .tt-save-btn {
+    background: #1a73e8; color: white; border: none;
+    border-radius: 14px; padding: 13px 28px;
+    font-size: 18px; font-weight: 700; cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+    transition: background 0.15s;
+  }
+  .tt-save-btn:active { background: #1557b0; }
+  .tt-saved-msg { font-size: 15px; color: #34A853; font-weight: 700; display: none; }
+
+  @media (max-width: 700px) {
+    .weather-timetable-row { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 680px) {
+    .grid-top { grid-template-columns: 1fr 1fr; }
+    .grid-top .schedule-card { grid-column: 1 / -1; }
+  }
+  @media (max-width: 420px) {
+    .grid-top { grid-template-columns: 1fr; }
+    .grid-top .schedule-card { grid-column: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── 설정 모달 ── -->
+<div class="modal-overlay" id="setup-modal">
+  <div class="modal-box">
+    <div class="modal-title">🏫 반 정보 설정</div>
+    <div class="modal-sub">처음 한 번만 설정하면 돼요. 나중에 ⚙️ 버튼으로 언제든 변경할 수 있어요.</div>
+    <div class="modal-label">학교 이름</div>
+    <input class="modal-input" id="setup-school" placeholder="예) 대전해든학교" value="대전해든학교">
+    <div class="modal-label">학급 이름</div>
+    <input class="modal-input" id="setup-class" placeholder="예) 고등학교 1학년 2반">
+    <div class="modal-label">학급 이모지</div>
+    <div class="modal-emoji-row" id="emoji-row"></div>
+    <button class="modal-btn" onclick="saveSetup()">✅ 저장하고 시작하기</button>
+  </div>
+</div>
+
+<!-- ── 사진 전체보기 ── -->
+<div class="photo-viewer-overlay" id="photo-viewer">
+  <button class="photo-viewer-close" onclick="closePhotoViewer()">✕</button>
+  <img class="photo-viewer-img" id="viewer-img" src="" alt="">
+  <div class="photo-viewer-label" id="viewer-label"></div>
+</div>
+
+<div class="wrap">
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="school-name" id="header-school">🏫 대전해든학교</div>
+    <div class="class-name" id="header-class">🩷 아침 대시보드</div>
+    <button class="settings-btn" onclick="openSettings()" title="반 설정">⚙️</button>
+  </div>
+
+  <!-- 인사 배너 -->
+  <div id="greeting" class="greeting-badge">좋은 아침이에요 😊</div>
+
+  <!-- 탭 바 -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-home-btn" onclick="switchTab('home')">🏠 홈</button>
+    <button class="tab-btn" id="tab-timetable-btn" onclick="switchTab('timetable')">📅 시간표</button>
+    <button class="tab-btn" id="tab-photo-btn" onclick="switchTab('photo')">📸 사진</button>
+  </div>
+
+  <!-- ── 홈 탭 ── -->
+  <div class="tab-content active" id="tab-home">
+    <div class="grid-top">
+      <div class="card">
+        <div class="card-label" style="font-size:26px;">📅 오늘 날짜</div>
+        <div class="date-text" id="date-text">—</div>
+        <div class="day-text" id="day-text">—</div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
+        <div class="card-label" style="justify-content:center;font-size:26px;">🕐 현재 시간</div>
+        <div class="time-text" id="time-text">--:--<span class="time-sec" id="time-sec">:--</span></div>
+      </div>
+      <div class="schedule-card" style="margin:0;">
+        <div class="schedule-header">
+          <div class="schedule-title" style="font-size:26px;">📋 오늘의 일정</div>
+          <button class="add-btn" onclick="addSchedule()">+</button>
+        </div>
+        <div class="schedule-items" id="schedule-list">
+          <div class="empty-schedule">+ 버튼을 눌러 오늘의 일정을 추가하세요</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="weather-timetable-row">
+      <div class="weather-dust-card">
+        <div class="card-label" style="font-size:21px;">🌤 날씨 &amp; 미세먼지 — 대전</div>
+        <div class="weather-row" id="weather-row"><div class="loading">날씨 정보 불러오는 중...</div></div>
+        <div class="dust-row" id="dust-row" style="display:none;"></div>
+        <div class="weather-src" id="weather-src"></div>
+      </div>
+      <div class="today-tt-card">
+        <div class="card-label" style="font-size:21px;">🗓 오늘 시간표</div>
+        <div class="today-tt-list" id="today-tt-list">
+          <div class="today-tt-empty">시간표 탭에서 시간표를 입력하세요</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="meal-card">
+      <div class="card-label">🍱 오늘 급식 — <span id="meal-school-name">대전해든학교</span></div>
+      <div id="meal-content"><div class="loading">급식 정보 불러오는 중...</div></div>
+      <div class="meal-src" id="meal-src"></div>
+    </div>
+
+    <div class="ext-links">
+      <a class="ext-btn" href="https://www.weather.go.kr/w/weather/forecast/short-term.do" target="_blank">
+        <span class="btn-icon">🌦</span> 기상청 날씨
+      </a>
+      <a class="ext-btn" href="https://weather.naver.com/today/29110000" target="_blank">
+        <span class="btn-icon">🗺</span> 네이버 날씨
+      </a>
+    </div>
+  </div>
+
+  <!-- ── 시간표 탭 ── -->
+  <div class="tab-content" id="tab-timetable">
+    <div class="card" style="padding:20px 22px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+        <div class="card-label" style="font-size:21px;margin-bottom:0;">📅 주간 시간표 편집</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="tt-saved-msg" id="tt-saved-msg">✅ 저장됨</span>
+          <button class="tt-save-btn" onclick="saveTimetable()">저장</button>
+        </div>
+      </div>
+      <div class="tt-grid-wrap">
+        <table class="tt-table" id="tt-table"></table>
+      </div>
+      <div style="font-size:14px;color:#9AA0A6;margin-top:12px;">💡 오늘 요일 열은 초록색으로 표시돼요. 저장하면 홈 탭에도 바로 반영돼요.</div>
+    </div>
+  </div>
+
+  <!-- ── 사진 탭 ── -->
+  <div class="tab-content" id="tab-photo">
+    <div class="card" style="padding:18px 20px;">
+      <div class="card-label" style="font-size:21px;margin-bottom:14px;">📸 학급 사진 앨범</div>
+      <div class="photo-toolbar">
+        <input type="file" id="photo-file-input" accept="image/*" multiple onchange="handlePhotoUpload(this)">
+        <button class="photo-upload-btn" onclick="document.getElementById('photo-file-input').click()">
+          📷 사진 추가
+        </button>
+        <input class="photo-label-input" id="photo-label-inp" placeholder="사진 설명 (선택)" maxlength="30">
+        <button class="photo-clear-btn" onclick="clearAllPhotos()">전체 삭제</button>
+      </div>
+      <div style="font-size:15px;color:#9AA0A6;margin-top:8px;">
+        💡 사진은 이 기기의 브라우저에 저장돼요. 여러 기기에서 공유하려면 같은 학급끼리 같은 브라우저를 쓰세요.
+      </div>
+    </div>
+
+    <div id="photo-grid-wrap"></div>
+  </div>
+</div><!-- /wrap -->
+
+<!-- ── 사진 전체보기 ── -->
+<input type="file" id="photo-file-input" accept="image/*" multiple style="display:none">
+
+<script>
+/* ════════════════════════════════
+   설정 (반 이름)
+════════════════════════════════ */
+const EMOJIS = ['🩷','⭐','🌟','🌈','🌻','🦋','🐬','🦄','🔥','🍀','🎯','🎨'];
+let selectedEmoji = '🩷';
+
+function buildEmojiRow() {
+  const row = document.getElementById('emoji-row');
+  row.innerHTML = EMOJIS.map(e =>
+    `<button class="emoji-btn${e===selectedEmoji?' selected':''}" onclick="selectEmoji('${e}')">${e}</button>`
+  ).join('');
+}
+function selectEmoji(e) {
+  selectedEmoji = e;
+  document.querySelectorAll('.emoji-btn').forEach(b => b.classList.toggle('selected', b.textContent===e));
+}
+
+function getSettings() {
+  try { return JSON.parse(localStorage.getItem('hdn_settings') || 'null'); } catch(e){ return null; }
+}
+function applySettings(s) {
+  if (!s) return;
+  document.getElementById('header-school').textContent = '🏫 ' + s.school;
+  document.getElementById('header-class').textContent = s.emoji + ' ' + s.cls;
+  document.getElementById('meal-school-name').textContent = s.school;
+  document.title = s.school + ' ' + s.cls + ' 아침 대시보드';
+  updateGreeting();
+}
+function saveSetup() {
+  const school = document.getElementById('setup-school').value.trim() || '대전해든학교';
+  const cls = document.getElementById('setup-class').value.trim();
+  if (!cls) { alert('학급 이름을 입력해주세요.'); return; }
+  const s = { school, cls, emoji: selectedEmoji };
+  localStorage.setItem('hdn_settings', JSON.stringify(s));
+  document.getElementById('setup-modal').style.display = 'none';
+  applySettings(s);
+  loadMeal(school);
+}
+function openSettings() {
+  const s = getSettings();
+  if (s) {
+    document.getElementById('setup-school').value = s.school;
+    document.getElementById('setup-class').value = s.cls;
+    selectedEmoji = s.emoji || '🩷';
+  }
+  buildEmojiRow();
+  document.getElementById('setup-modal').style.display = 'flex';
+}
+// 클릭 외부 시 닫기
+document.getElementById('setup-modal').addEventListener('click', function(e) {
+  if (e.target === this && getSettings()) this.style.display = 'none';
+});
+
+/* 초기 설정 */
+(function init() {
+  buildEmojiRow();
+  const s = getSettings();
+  if (s) {
+    document.getElementById('setup-modal').style.display = 'none';
+    applySettings(s);
+    loadMeal(s.school);
+  } else {
+    document.getElementById('setup-modal').style.display = 'flex';
+    loadMeal('대전해든학교');
+  }
+})();
+
+/* ════════════════════════════════
+   탭 전환
+════════════════════════════════ */
+function switchTab(name) {
+  ['home','timetable','photo'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===name);
+    document.getElementById('tab-'+t+'-btn').classList.toggle('active', t===name);
+  });
+  if (name==='photo') renderPhotoGrid();
+  if (name==='timetable') renderTimetableEditor();
+}
+
+/* ════════════════════════════════
+   시계 / 인사
+════════════════════════════════ */
+const DAYS = ['일','월','화','수','목','금','토'];
+const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+
+function updateGreeting() {
+  const s = getSettings();
+  const label = s ? s.emoji + ' ' + s.cls : '';
+  const hr = new Date().getHours();
+  let g = '좋은 아침이에요 😊';
+  if (hr >= 12 && hr < 18) g = '좋은 오후예요 ☀️';
+  else if (hr >= 18) g = '좋은 저녁이에요 🌙';
+  document.getElementById('greeting').textContent = g + (label ? '  ' + label : '');
+}
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('date-text').textContent =
+    now.getFullYear() + '년 ' + MONTHS[now.getMonth()] + ' ' + now.getDate() + '일';
+  document.getElementById('day-text').textContent = DAYS[now.getDay()] + '요일';
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('time-text').innerHTML =
+    h + ':' + m + '<span class="time-sec" style="font-size:24px;color:#9AA0A6;font-weight:400;">:' + s + '</span>';
+  updateGreeting();
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* ════════════════════════════════
+   날씨
+════════════════════════════════ */
+const WX_ICON = {'Sunny':'☀️','Clear':'🌙','Partly cloudy':'⛅','Cloudy':'☁️','Overcast':'☁️','Mist':'🌫','Patchy rain possible':'🌦','Light rain':'🌧','Moderate rain':'🌧','Heavy rain':'⛈','Light snow':'🌨','Moderate snow':'❄️','Heavy snow':'❄️','Thundery outbreaks possible':'⛈','Blizzard':'🌨','Fog':'🌫'};
+const WX_KR  = {'Sunny':'맑음','Clear':'맑음','Partly cloudy':'구름 조금','Cloudy':'흐림','Overcast':'흐림','Mist':'안개','Patchy rain possible':'비 올 수 있음','Light rain':'가벼운 비','Moderate rain':'비','Heavy rain':'강한 비','Light snow':'가벼운 눈','Moderate snow':'눈','Heavy snow':'강한 눈','Thundery outbreaks possible':'천둥번개','Blizzard':'눈보라','Fog':'짙은 안개'};
+async function loadWeather() {
+  try {
+    const res = await fetch('https://wttr.in/Daejeon?format=j1');
+    const data = await res.json();
+    const cur = data.current_condition[0];
+    const desc = cur.weatherDesc[0].value;
+    document.getElementById('weather-row').innerHTML = `
+      <div class="weather-icon">${WX_ICON[desc]||'🌤'}</div>
+      <div>
+        <div class="weather-temp">${cur.temp_C}°C</div>
+        <div class="weather-desc">${WX_KR[desc]||desc}</div>
+        <div class="weather-sub">체감 ${cur.FeelsLikeC}°C &nbsp;·&nbsp; 습도 ${cur.humidity}%</div>
+      </div>`;
+    document.getElementById('weather-src').textContent = 'wttr.in 제공 · 대전';
+  } catch(e) {
+    document.getElementById('weather-row').innerHTML = '<div class="loading">날씨 정보를 가져올 수 없습니다.</div>';
+  }
+  loadDust();
+}
+async function loadDust() {
+  try {
+    const res = await fetch('https://api.waqi.info/feed/daejeon/?token=demo');
+    const data = await res.json();
+    if (data.status !== 'ok') return;
+    const aqi  = data.data.aqi;
+    const pm25 = data.data.iaqi?.pm25?.v ?? '—';
+    const pm10 = data.data.iaqi?.pm10?.v ?? '—';
+    let st, cls;
+    if (aqi <= 50)       { st='좋음';     cls='good';  }
+    else if (aqi <= 100) { st='보통';     cls='normal';}
+    else if (aqi <= 150) { st='나쁨';     cls='bad';   }
+    else                 { st='매우 나쁨'; cls='vbad';  }
+    const row = document.getElementById('dust-row');
+    row.style.display = 'flex';
+    row.innerHTML = `
+      <div class="dust-box bg-${cls}" style="flex:1.2">
+        <div class="dust-box-label">대기질 AQI</div>
+        <div class="dust-box-val c-${cls}">${aqi}</div>
+        <div class="dust-box-status c-${cls}">${st}</div>
+      </div>
+      <div class="dust-box bg-${cls}">
+        <div class="dust-box-label">PM2.5</div>
+        <div class="dust-box-val c-${cls}">${pm25}</div>
+        <div class="dust-box-unit">㎍/㎥</div>
+      </div>
+      <div class="dust-box bg-${cls}">
+        <div class="dust-box-label">PM10</div>
+        <div class="dust-box-val c-${cls}">${pm10}</div>
+        <div class="dust-box-unit">㎍/㎥</div>
+      </div>`;
+  } catch(e) {}
+}
+
+/* ════════════════════════════════
+   급식
+════════════════════════════════ */
+async function loadMeal(schoolName) {
+  schoolName = schoolName || (getSettings()?.school) || '대전해든학교';
+  const mealEl = document.getElementById('meal-content');
+  const srcEl  = document.getElementById('meal-src');
+  mealEl.innerHTML = '<div class="loading">급식 정보 불러오는 중...</div>';
+  const now = new Date();
+  const ymd = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+  try {
+    const schoolUrl = `https://open.neis.go.kr/hub/schoolInfo?Type=json&pindex=1&psize=5&SCHUL_NM=${encodeURIComponent(schoolName)}`;
+    const schoolData = await (await fetch(schoolUrl)).json();
+    const schoolRow  = schoolData.schoolInfo?.[1]?.row?.[0];
+    if (!schoolRow) throw new Error('학교 정보 없음');
+    const atpt = schoolRow.ATPT_OFCDC_SC_CODE;
+    const code = schoolRow.SD_SCHUL_CODE;
+    const mealUrl = `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json&pindex=1&psize=1`
+                  + `&ATPT_OFCDC_SC_CODE=${atpt}&SD_SCHUL_CODE=${code}`
+                  + `&MLSV_YMD=${ymd}&MMEAL_SC_CODE=2`;
+    const mealData = await (await fetch(mealUrl)).json();
+    const rows = mealData.mealServiceDietInfo?.[1]?.row;
+    if (rows && rows.length > 0) {
+      const cal  = rows[0].CAL_INFO || '';
+      const menu = rows[0].DDISH_NM
+        .replace(/<br\/>/g,'|').split('|')
+        .map(s => s.replace(/\([\d.]+\)/g,'').trim())
+        .filter(Boolean);
+      mealEl.innerHTML =
+        '<ul class="meal-list">' + menu.map(m => `<li>🥗 ${m}</li>`).join('') + '</ul>'
+        + (cal ? `<div class="meal-cal">🔥 열량: ${cal}</div>` : '');
+      srcEl.textContent = '출처: NEIS 학교급식 공공데이터 · ' + schoolRow.SCHUL_NM;
+    } else {
+      mealEl.innerHTML = '<div style="font-size:16px;color:#9AA0A6;padding:10px 0;">오늘 급식 정보가 없습니다 🍽</div>';
+      srcEl.textContent = '';
+    }
+  } catch(e) {
+    mealEl.innerHTML = '<div class="loading">급식 정보를 불러올 수 없습니다.<br><span style="font-size:12px;color:#BDC1C6;">인터넷 연결을 확인해 주세요.</span></div>';
+  }
+}
+
+/* ════════════════════════════════
+   일정
+════════════════════════════════ */
+function scheduleKey() {
+  const s = getSettings();
+  return 'hdn_schedules_' + (s ? s.cls.replace(/\s/g,'') : 'default');
+}
+let schedules = [];
+function loadSchedules() {
+  try { schedules = JSON.parse(localStorage.getItem(scheduleKey()) || '[]'); } catch(e) { schedules=[]; }
+  renderSchedules();
+}
+function saveSchedules() {
+  try { localStorage.setItem(scheduleKey(), JSON.stringify(schedules)); } catch(e) {}
+}
+function renderSchedules() {
+  const el = document.getElementById('schedule-list');
+  if (!schedules.length) {
+    el.innerHTML = '<div class="empty-schedule">+ 버튼을 눌러 오늘의 일정을 추가하세요</div>';
+    return;
+  }
+  el.innerHTML = schedules.map((s,i) => `
+    <div class="schedule-item">
+      <div class="schedule-num">${i+1}</div>
+      <input class="schedule-text"
+        placeholder="일정 내용을 입력하세요"
+        value="${s.text.replace(/"/g,'&quot;')}"
+        oninput="schedules[${i}].text=this.value;saveSchedules();" />
+      <button class="del-btn" onclick="schedules.splice(${i},1);saveSchedules();renderSchedules();">✕</button>
+    </div>`).join('');
+}
+function addSchedule() {
+  schedules.push({ text: '' });
+  saveSchedules();
+  renderSchedules();
+  const inputs = document.querySelectorAll('.schedule-text');
+  if (inputs.length) inputs[inputs.length-1].focus();
+}
+loadSchedules();
+
+/* ════════════════════════════════
+   사진 앨범
+════════════════════════════════ */
+function photoKey() {
+  const s = getSettings();
+  return 'hdn_photos_' + (s ? s.cls.replace(/\s/g,'') : 'default');
+}
+let photos = [];
+function loadPhotos() {
+  try { photos = JSON.parse(localStorage.getItem(photoKey()) || '[]'); } catch(e) { photos=[]; }
+}
+function savePhotos() {
+  try { localStorage.setItem(photoKey(), JSON.stringify(photos)); } catch(e) {
+    alert('사진 저장 용량이 부족합니다. 일부 사진을 삭제해 주세요.');
+  }
+}
+loadPhotos();
+
+function handlePhotoUpload(input) {
+  const label = document.getElementById('photo-label-inp').value.trim();
+  const files = Array.from(input.files);
+  let done = 0;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const now = new Date();
+      photos.unshift({
+        id: Date.now() + Math.random(),
+        src: e.target.result,
+        label: label || file.name.replace(/\.[^.]+$/,''),
+        date: now.getFullYear() + '.' + String(now.getMonth()+1).padStart(2,'0') + '.' + String(now.getDate()).padStart(2,'0')
+      });
+      done++;
+      if (done === files.length) {
+        savePhotos();
+        renderPhotoGrid();
+        document.getElementById('photo-label-inp').value = '';
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function deletePhoto(id) {
+  if (!confirm('이 사진을 삭제할까요?')) return;
+  photos = photos.filter(p => p.id !== id);
+  savePhotos();
+  renderPhotoGrid();
+}
+
+function clearAllPhotos() {
+  if (!photos.length) return;
+  if (!confirm('사진을 모두 삭제할까요?')) return;
+  photos = [];
+  savePhotos();
+  renderPhotoGrid();
+}
+
+function renderPhotoGrid() {
+  loadPhotos();
+  const wrap = document.getElementById('photo-grid-wrap');
+  if (!photos.length) {
+    wrap.innerHTML = `
+      <div class="photo-empty">
+        <div class="photo-empty-icon">📷</div>
+        <div>아직 사진이 없어요</div>
+        <div style="font-size:13px;color:#BDC1C6;margin-top:6px;">위의 <b>사진 추가</b> 버튼으로 사진을 업로드하세요</div>
+      </div>`;
+    return;
+  }
+  wrap.innerHTML = `<div class="photo-grid">` +
+    photos.map(p => `
+      <div class="photo-item" onclick="openPhotoViewer('${p.id}')">
+        <img src="${p.src}" alt="${p.label}" loading="lazy">
+        <button class="photo-del-btn" onclick="event.stopPropagation();deletePhoto(${p.id})">✕</button>
+        <div class="photo-item-label">${p.label}</div>
+        <div class="photo-item-date">${p.date}</div>
+      </div>`).join('') +
+    `</div>`;
+}
+
+function openPhotoViewer(id) {
+  const p = photos.find(x => String(x.id) === String(id));
+  if (!p) return;
+  document.getElementById('viewer-img').src = p.src;
+  document.getElementById('viewer-label').textContent = p.label + ' · ' + p.date;
+  document.getElementById('photo-viewer').classList.add('active');
+}
+function closePhotoViewer() {
+  document.getElementById('photo-viewer').classList.remove('active');
+}
+document.getElementById('photo-viewer').addEventListener('click', function(e) {
+  if (e.target === this) closePhotoViewer();
+});
+
+/* ════════════════════════════════
+   시간표
+════════════════════════════════ */
+const TT_DAYS = ['월','화','수','목','금'];
+const TT_PERIODS = 7; // 교시 수
+
+function ttKey() {
+  const s = getSettings();
+  return 'hdn_tt_' + (s ? s.cls.replace(/\s/g,'') : 'default');
+}
+
+// 빈 시간표 구조: { 월: ['','','','','','',''], 화: [...], ... }
+function emptyTT() {
+  const tt = {};
+  TT_DAYS.forEach(d => { tt[d] = Array(TT_PERIODS).fill(''); });
+  return tt;
+}
+
+function loadTT() {
+  try { return JSON.parse(localStorage.getItem(ttKey()) || 'null') || emptyTT(); }
+  catch(e) { return emptyTT(); }
+}
+
+function saveTimetable() {
+  const tt = emptyTT();
+  TT_DAYS.forEach((d, di) => {
+    for (let p = 0; p < TT_PERIODS; p++) {
+      const el = document.getElementById(`tt_${di}_${p}`);
+      if (el) tt[d][p] = el.value.trim();
+    }
+  });
+  localStorage.setItem(ttKey(), JSON.stringify(tt));
+  // 저장 완료 메시지
+  const msg = document.getElementById('tt-saved-msg');
+  msg.style.display = 'inline';
+  setTimeout(() => { msg.style.display = 'none'; }, 2000);
+  // 홈 탭 오늘 시간표 업데이트
+  renderTodayTimetable();
+}
+
+function todayDayName() {
+  const dow = new Date().getDay(); // 0=일,1=월,...,6=토
+  return TT_DAYS[dow - 1] || null; // 주말이면 null
+}
+
+function renderTimetableEditor() {
+  const tt = loadTT();
+  const todayDay = todayDayName();
+  const table = document.getElementById('tt-table');
+
+  // 헤더행
+  let html = '<thead><tr><th style="background:#5F6368;width:54px;">교시</th>';
+  TT_DAYS.forEach(d => {
+    const isTd = d === todayDay;
+    html += `<th class="${isTd?'today-col':''}">${d}요일${isTd?' 📍':''}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  // 교시별 행
+  for (let p = 0; p < TT_PERIODS; p++) {
+    html += `<tr><td class="tt-period-label">${p+1}교시</td>`;
+    TT_DAYS.forEach((d, di) => {
+      const isTd = d === todayDay;
+      html += `<td class="${isTd?'today-col':''}">
+        <input class="tt-input" id="tt_${di}_${p}"
+          placeholder="과목"
+          value="${(tt[d][p]||'').replace(/"/g,'&quot;')}"
+          onchange="autoSaveTT()">
+      </td>`;
+    });
+    html += '</tr>';
+  }
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+function autoSaveTT() {
+  // 입력 시 자동저장
+  const tt = emptyTT();
+  TT_DAYS.forEach((d, di) => {
+    for (let p = 0; p < TT_PERIODS; p++) {
+      const el = document.getElementById(`tt_${di}_${p}`);
+      if (el) tt[d][p] = el.value.trim();
+    }
+  });
+  localStorage.setItem(ttKey(), JSON.stringify(tt));
+  renderTodayTimetable();
+}
+
+function renderTodayTimetable() {
+  const tt = loadTT();
+  const day = todayDayName();
+  const el = document.getElementById('today-tt-list');
+  if (!el) return;
+
+  if (!day) {
+    el.innerHTML = '<div class="today-tt-empty">오늘은 주말이에요 🎉</div>';
+    return;
+  }
+  const subjects = tt[day] || [];
+  const hasAny = subjects.some(s => s.trim());
+  if (!hasAny) {
+    el.innerHTML = '<div class="today-tt-empty">시간표 탭에서 시간표를 입력하세요</div>';
+    return;
+  }
+
+  // 현재 교시 계산 (단순: 9시 시작, 45분 수업 기준)
+  const now = new Date();
+  const minsSince9 = (now.getHours() - 9) * 60 + now.getMinutes();
+  const currentPeriod = Math.floor(minsSince9 / 45); // 0-based
+
+  el.innerHTML = subjects.map((s, i) => {
+    if (!s) return '';
+    const isCur = i === currentPeriod;
+    return `<div class="today-tt-item${isCur?' current':''}">
+      <div class="today-tt-period">${i+1}</div>
+      <div class="today-tt-subject">${s}</div>
+      ${isCur ? '<div style="font-size:13px;color:#1a73e8;margin-left:auto;font-weight:700;">▶ 지금</div>' : ''}
+    </div>`;
+  }).filter(Boolean).join('');
+
+  if (!el.innerHTML) el.innerHTML = '<div class="today-tt-empty">시간표 탭에서 시간표를 입력하세요</div>';
+}
+
+// 초기 렌더
+renderTodayTimetable();
+
+/* ════════════════════════════════
+   시작
+════════════════════════════════ */
+loadWeather();
+</script>
+</body>
+</html>
