@@ -356,6 +356,97 @@
     .grid-top { grid-template-columns: 1fr; }
     .grid-top .schedule-card { grid-column: auto; }
   }
+
+/* ====================================
+   전자칠판 가로 화면 최적화
+==================================== */
+
+/* 대시보드 전체 너비 확장 */
+.wrap {
+  width: 100%;
+  max-width: 1600px;
+  padding: 0 30px;
+}
+
+/* 날짜 / 시간 / 일정 카드 비율 */
+.grid-top {
+  display: grid;
+  grid-template-columns: minmax(290px, 1fr)
+                         minmax(300px, 1fr)
+                         minmax(450px, 1.6fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+/* 카드 크기와 여백 */
+.grid-top > .card,
+.grid-top > .schedule-card {
+  min-width: 0;
+  padding: 22px 24px;
+}
+
+/* 오늘 날짜 줄바꿈 방지 */
+.date-text {
+  font-size: clamp(25px, 2.2vw, 34px);
+  white-space: nowrap;
+  font-weight: 900;
+}
+
+/* 요일 */
+.day-text {
+  font-size: 28px;
+  margin-top: 12px;
+}
+
+/* 현재 시간 */
+.time-text {
+  font-size: clamp(44px, 4vw, 64px);
+  white-space: nowrap;
+}
+
+/* 일정 입력칸 */
+.schedule-text {
+  min-width: 0;
+  width: 100%;
+  font-size: 22px;
+}
+
+/* 날씨와 시간표 가로 확장 */
+.weather-timetable-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+/* 작은 화면에서는 자동 조절 */
+@media (max-width: 1100px) {
+  .grid-top {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .grid-top .schedule-card {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .wrap {
+    padding: 0 16px;
+  }
+
+  .grid-top {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-top .schedule-card {
+    grid-column: auto;
+  }
+
+  .weather-timetable-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 </style>
 </head>
 <body>
